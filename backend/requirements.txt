@@ -1,0 +1,6 @@
+fastapi==0.141.1
+uvicorn[standard]
+opencv-python==5.0.0.93
+numpy==2.5.3
+python-multipart
+pytest
