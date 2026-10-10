@@ -1,223 +1,224 @@
-# 📑 OMR Checker — Cloud-Powered Automated OMR Evaluation System
+# OMR Checker
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.141+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![OpenCV](https://img.shields.io/badge/OpenCV-Computer%20Vision-5C3EE8?logo=opencv&logoColor=white)](https://opencv.org)
-[![SQLite](https://img.shields.io/badge/SQLite-Local%20Storage-003B57?logo=sqlite&logoColor=white)](https://sqlite.org)
-[![Render](https://img.shields.io/badge/Render-Cloud%20Hosted-46E3B7?logo=render&logoColor=black)](https://render.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+An automated Optical Mark Recognition (OMR) evaluation system consisting of a Flutter mobile application and a cloud-hosted FastAPI backend powered by OpenCV.
 
-An end-to-end, production-ready Optical Mark Recognition (OMR) evaluation application designed for educators and academic institutions. The system features a responsive **Flutter mobile app** paired with a high-performance **FastAPI + OpenCV computer vision backend** hosted live on the cloud, enabling instant, automated sheet scanning, answer key matching, and grading without local servers, USB cables, or specialized scanning hardware.
+The application allows teachers to create exams, define or scan answer keys, scan student OMR sheets using their smartphone camera, and automatically grade submissions with local SQLite persistence.
 
 ---
 
-## 🌟 Key Features
+## Overview
 
-- **📱 Complete Mobile Workflow**:
-  - Create and manage exams with custom question limits (up to 30 objective questions for OMR-001).
-  - Manage multiple exams locally with persistent offline storage.
-  - Safe, transactional cascade deletion of exams, answer keys, and student evaluations.
+Traditional OMR evaluation requires dedicated hardware scanners or manual paper-checking. This project provides an accessible, mobile-first alternative:
 
-- **🔑 Flexible Answer Key Creation**:
-  - **Manual Input**: Interactive option selection (`A`, `B`, `C`, `D`, or `Blank`).
-  - **Scan Solution Sheet**: Scan a pre-filled master sheet with the camera/gallery; OpenCV auto-detects and saves the answer key.
-  - **Free-Mark Rule**: Mark any question as `Blank` in the answer key to grant full marks automatically to all candidates regardless of their response.
-
-- **👁️ Computer Vision Sheet Processing (OpenCV)**:
-  - **Corner Marker Detection**: Automatically identifies the 4 black registration fiducials.
-  - **Perspective Correction (Homography / Warp)**: Rectifies tilted, rotated, or angled camera photos into a standardized $1370 \times 2048$ coordinate system.
-  - **Bubble Darkness & Fill Ratio Measurement**: Dual-metric thresholding for reliable bubble classification (`marked`, `blank`, or `ambiguous`).
-
-- **📊 Comprehensive Student Evaluation**:
-  - Roll number entry & single-tap scan pipeline.
-  - Instant scoring with 8 key metrics: Roll number, Total questions, Answered count, Correct, Wrong, Blank, Final score, and Percentage.
-  - Question-by-question breakdown showing candidate's response vs. correct answer.
-  - Offline-first SQLite persistence for all student evaluations.
-
-- **☁️ Cloud Architecture (Zero Laptop / Zero Cable)**:
-  - Deployed on **Render** cloud platform with 24/7 HTTPS accessibility.
-  - Evaluates sheets purely over mobile data or Wi-Fi.
+1. **Mobile Frontend (Flutter)**: Handles teacher interaction, exam creation, answer key configuration, camera image capture, grading display, and offline SQLite storage.
+2. **Vision Backend (FastAPI + OpenCV)**: Receives uploaded sheet images, detects four corner registration markers, corrects perspective distortion via homography, measures bubble darkness across an aligned grid, and returns classified answers in JSON format.
+3. **Cloud Deployment (Render)**: The backend is hosted as a cloud service, removing the need for a local development machine, USB cables, or local port forwarding during usage.
 
 ---
 
-## 🏛️ System Architecture
+## Features
+
+- **Exam Management**: Create exams, assign custom question limits (up to 30 for the OMR-001 template), and manage exam records.
+- **Cascading Exam Deletion**: Deleting an exam safely clears associated student evaluations, stored answer keys, and the exam record in a single database transaction.
+- **Dual Answer Key Modes**:
+  - **Manual Entry**: Set correct choices (`A`, `B`, `C`, `D`, or `Blank`) per question.
+  - **Scan Solution Sheet**: Upload or capture a pre-filled master sheet to automatically extract and populate the answer key via the vision backend.
+- **Free-Mark Rule Support**: If a question in the answer key is left `Blank` (or unassigned), all students automatically receive full marks for that question, regardless of whether they marked an option or left it blank.
+- **Computer Vision Pipeline**:
+  - Four-corner fiducial marker identification via contour geometry and aspect ratio filtering.
+  - Perspective transformation (`cv2.warpPerspective`) normalizing images to a standardized $1370 \times 2048$ pixel space.
+  - Dual-metric bubble classification using mean inner darkness and dark pixel area ratios.
+- **Student Grading & Evaluation**:
+  - Manual roll number input per candidate.
+  - Immediate score calculation showing total questions, answered count, correct, wrong, blank, total score, and percentage.
+  - Per-question breakdown comparing student choices with the answer key.
+  - Automatic persistence to local SQLite database with duplicate-save prevention guards.
+
+---
+
+## Architecture
 
 ```
-[ Teacher's Smartphone ]
-  │
-  ├── 📱 Flutter Mobile Client (Dart)
-  │     ├── Exam Management UI
-  │     ├── Camera / Gallery Sheet Scanner (ImagePicker)
-  │     └── Automatic Grading Engine & Breakdown
-  │
-  └── 🗄️ SQLite Database (sqflite)
-        ├── exams Table
-        ├── answer_keys Table
-        └── student_evaluations Table
-  │
-  │  HTTPS Multipart Upload (image/jpeg)
-  ▼
-[ Render Cloud Platform ]
-  │
-  ├── ⚡ Uvicorn ASGI Server
-  │
-  └── 🚀 FastAPI Microservice (Python)
+[ Mobile Device (Teacher) ]
         │
-        └── 👁️ OMR Detector (OpenCV & NumPy)
-              ├── 1. Image Decode
-              ├── 2. Corner Marker Detection
-              ├── 3. Perspective Warp Transformation (OMR-001)
-              ├── 4. Bubble Darkness & Density Extraction
-              └── 5. Classification (ক, খ, গ, ঘ)
-  │
-  │  JSON Response (Detected Answers & Confidence)
-  ▼
-[ Evaluation & Instant Score Generation on Device ]
+        ├── Flutter UI (Dart)
+        ├── Camera / Gallery Image Picker
+        ├── Offline Evaluation Engine & Scoring
+        └── SQLite Database (sqflite)
+                ├── exams
+                ├── answer_keys
+                └── student_evaluations
+        │
+        │ HTTPS (POST /api/v1/omr/process)
+        ▼
+[ Cloud Backend (Render) ]
+        │
+        ├── Uvicorn ASGI Server
+        └── FastAPI Application (Python)
+                │
+                └── OpenCV Detector
+                        ├── Marker detection & validation
+                        ├── Perspective correction (Homography)
+                        ├── Grid patch extraction
+                        └── Bubble score classification
 ```
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| **Frontend UI** | [Flutter](https://flutter.dev) (Dart) | Cross-platform native mobile app (Material 3 design) |
-| **Local Storage** | [SQLite](https://sqlite.org) (`sqflite`) | Persistent offline storage for exams, keys, and results |
-| **Backend API** | [FastAPI](https://fastapi.tiangolo.com) (Python 3.13) | Asynchronous, high-throughput REST API service |
-| **Web Server** | [Uvicorn](https://www.uvicorn.org) | Lightning-fast ASGI web server |
-| **Computer Vision** | [OpenCV](https://opencv.org) & [NumPy](https://numpy.org) | Image warping, contour detection, and bubble analysis |
-| **Cloud Hosting** | [Render](https://render.com) | Free cloud container deployment with continuous Git delivery |
+- **Mobile Client**: Flutter 3.x, Dart, Material 3, sqflite, path, http, image_picker
+- **Backend Service**: Python 3.13, FastAPI, Uvicorn, OpenCV (`opencv-python-headless`), NumPy
+- **Cloud Infrastructure**: Render (Web Service container environment)
+- **Database**: Local SQLite (schema version 3)
 
 ---
 
-## 📂 Repository Structure
+## Project Structure
 
 ```
 omr-application/
-├── backend/                        # FastAPI + OpenCV computer vision service
+├── backend/
 │   ├── app/
 │   │   ├── core/
-│   │   │   └── template_omr001.py  # Geometric coordinates of OMR-001 sheet
+│   │   │   └── template_omr001.py   # Coordinate grid for the OMR-001 sheet
 │   │   ├── services/
-│   │   │   └── omr_detector.py     # Image processing & bubble detection logic
-│   │   └── main.py                 # FastAPI application routes (/health, /api/v1/omr/process)
+│   │   │   └── omr_detector.py      # Core image rectification and bubble detection
+│   │   └── main.py                  # FastAPI route declarations & CORS configuration
 │   ├── tests/
-│   │   └── test_detector.py        # Pytest test suite with reference sheet verification
-│   ├── requirements.txt            # Python dependencies
-│   └── pytest.ini                  # Pytest configuration
+│   │   └── test_detector.py         # Pytest suite validating reference sheet detection
+│   ├── requirements.txt             # Python dependencies
+│   └── pytest.ini                   # Pytest configuration
 │
-├── mobile/                         # Flutter Android/iOS application
+├── mobile/
 │   ├── lib/
-│   │   ├── core/                   # App theme, styles, strings
+│   │   ├── core/                    # Theme, styling, and application constants
 │   │   ├── features/
-│   │   │   ├── exam/               # Create exam, details, manual answer key screens
-│   │   │   ├── home/               # Home screen with exam cards & delete actions
-│   │   │   ├── processing/         # OMR processing & alignment visualization
-│   │   │   ├── result/             # Result screen with scoring & question breakdown
-│   │   │   └── scanner/            # Camera/gallery capture with student roll input
-│   │   ├── models/                 # Data models (Exam, StudentEvaluation, OmrResult)
+│   │   │   ├── exam/                # Exam creation, detail, and manual answer key screens
+│   │   │   ├── home/                # Home screen with exam listing and deletion flow
+│   │   │   ├── processing/          # Detection pipeline loading and status screen
+│   │   │   ├── result/              # Evaluation display, grading calculations, breakdown
+│   │   │   └── scanner/             # Student sheet capture and roll number entry
+│   │   ├── models/                  # Exam, StudentEvaluation, and OmrResult models
 │   │   ├── services/
-│   │   │   ├── database/           # SQLite service with schema v3 migrations
+│   │   │   ├── database/            # SQLite DatabaseService (schema migrations & queries)
 │   │   │   ├── image_picker_service.dart
-│   │   │   └── omr_api_service.dart# HTTP client communicating with backend
-│   │   └── main.dart               # Flutter application entry point
-│   ├── test/                       # Flutter widget & unit test suite
-│   └── pubspec.yaml                # Flutter dependencies & metadata
+│   │   │   └── omr_api_service.dart # HTTP client handling multipart backend uploads
+│   │   └── main.dart                # Application entrypoint
+│   ├── test/
+│   │   ├── omr_api_service_test.dart# API client unit tests
+│   │   └── widget_test.dart         # Flutter widget test suite
+│   └── pubspec.yaml                 # Mobile dependencies and project metadata
 │
-└── README.md                       # Comprehensive project documentation
+└── README.md
 ```
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
-### Prerequisites
+### Using the Pre-built Release APK (Cloud Backend)
 
-- **Python 3.11+** (Python 3.13 tested)
-- **Flutter SDK 3.x**
-- **Android Studio / VS Code** with Android SDK installed
-
----
-
-### Option 1: Running with Cloud Backend (Recommended)
-
-The backend is deployed live on Render at:
+The backend is deployed and running on Render:
 ```
 https://omr-application.onrender.com
 ```
 
-Build and install the release APK directly:
+To build and run the release APK against this cloud endpoint:
+
 ```bash
 cd mobile
 flutter build apk --release --dart-define=OMR_API_URL=https://omr-application.onrender.com
 ```
-Install the generated APK (`mobile/build/app/outputs/flutter-apk/app-release.apk`) on any Android phone. **No laptop or local server is needed!**
+
+The compiled APK will be generated at:
+```
+mobile/build/app/outputs/flutter-apk/app-release.apk
+```
+
+Install this APK on an Android device. The app requires an active internet connection to communicate with the cloud vision backend during sheet scans.
 
 ---
 
-### Option 2: Running Locally
+### Running the Backend Locally
 
-#### 1. Start the Backend Service
+If you prefer running the Python vision engine on your local machine:
 
-```bash
-cd backend
+1. Navigate to the backend directory and set up a virtual environment:
 
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate    # On Windows: .venv\Scripts\activate
+   ```bash
+   cd backend
+   python -m venv .venv
+   ```
 
-# Install dependencies
-pip install -r requirements.txt
+   Activate the virtual environment:
+   - **Windows**: `.venv\Scripts\activate`
+   - **Linux / macOS**: `source .venv/bin/activate`
 
-# Start FastAPI server
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
+2. Install dependencies:
 
-- Health Check: `http://127.0.0.1:8000/health`
-- Interactive Swagger Docs: `http://127.0.0.1:8000/docs`
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-#### 2. Connect Mobile Client (Over USB or LAN)
+3. Start the Uvicorn server:
 
-**Via USB Reverse Port Forwarding:**
-```bash
-adb reverse tcp:8000 tcp:8000
-cd mobile
-flutter run
-```
+   ```bash
+   uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+   ```
 
-**Via Local Wi-Fi / Hotspot:**
-Find your PC's IP (e.g. `192.168.1.100`), ensure port 8000 is open in firewall, then run:
-```bash
-cd mobile
-flutter run --dart-define=OMR_API_URL=http://192.168.1.100:8000
-```
+   - Health Check: `GET http://127.0.0.1:8000/health`
+   - Swagger Documentation: `http://127.0.0.1:8000/docs`
 
 ---
 
-## 📡 API Reference
+### Running the Mobile App Locally
+
+1. Ensure an Android device or emulator is connected.
+2. If testing against a local backend running on your PC, forward the port via ADB:
+
+   ```bash
+   adb reverse tcp:8000 tcp:8000
+   ```
+
+3. Launch the application:
+
+   ```bash
+   cd mobile
+   flutter run
+   ```
+
+---
+
+## API Reference
 
 ### Health Check
-```http
-GET /health
-```
-**Response:**
-```json
-{
-  "status": "ok",
-  "service": "omr-checker-api"
-}
-```
+
+Verifies backend service availability.
+
+- **URL**: `/health`
+- **Method**: `GET`
+- **Response**:
+  ```json
+  {
+    "status": "ok",
+    "service": "omr-checker-api"
+  }
+  ```
+
+---
 
 ### Process OMR Sheet
-```http
-POST /api/v1/omr/process
-Content-Type: multipart/form-data
-```
-| Parameter | Type | Description |
-|---|---|---|
-| `file` | File (`image/*`) | The photographed or scanned OMR sheet |
 
-**Sample Response:**
+Uploads an image for corner detection, perspective correction, and bubble reading.
+
+- **URL**: `/api/v1/omr/process`
+- **Method**: `POST`
+- **Content-Type**: `multipart/form-data`
+- **Form Fields**:
+  - `file`: Image file (`.jpg`, `.png`)
+
+**Success Response (200 OK)**:
 ```json
 {
   "template_id": "OMR-001",
@@ -227,14 +228,24 @@ Content-Type: multipart/form-data
       "answer": "ক",
       "status": "marked",
       "confidence_gap": 78.4,
-      "scores": { "ক": 182.5, "খ": 22.1, "গ": 18.0, "ঘ": 24.3 }
+      "scores": {
+        "ক": 182.5,
+        "খ": 22.1,
+        "গ": 18.0,
+        "ঘ": 24.3
+      }
     },
     {
       "question": 2,
       "answer": null,
       "status": "blank",
       "confidence_gap": 4.1,
-      "scores": { "ক": 19.0, "খ": 23.1, "গ": 21.0, "ঘ": 20.4 }
+      "scores": {
+        "ক": 19.0,
+        "খ": 23.1,
+        "গ": 21.0,
+        "ঘ": 20.4
+      }
     }
   ],
   "summary": {
@@ -248,36 +259,49 @@ Content-Type: multipart/form-data
 
 ---
 
-## 🧪 Testing & Verification
+## Evaluation & Scoring Rules
 
-### Flutter Tests & Analysis
+| Answer Key Condition | Student Detected Answer | Evaluation Result | Marks |
+|---|---|---|---|
+| Option selected (`A`, `B`, `C`, `D`) | Matches Answer Key | Correct | +1 |
+| Option selected (`A`, `B`, `C`, `D`) | Differs from Answer Key | Wrong | 0 |
+| Option selected (`A`, `B`, `C`, `D`) | Blank / Unanswered | Blank | 0 |
+| **Blank / Not Specified** | **Any option or Blank** | **Free Mark** | **+1** |
+
+---
+
+## Testing
+
+### Mobile Tests
+
+Run static analysis and the Flutter test suite:
+
 ```bash
 cd mobile
 flutter analyze
 flutter test
 ```
-- Includes tests for Home screen workflow, exam creation, result calculations with free-mark rule, delete confirmation dialogs, and API client error handling.
+
+Test coverage includes:
+- Home workflow and exam creation
+- Delete confirmation and cascading SQLite purge
+- Scoring calculations with the free-mark rule
+- Roll number entry validation
+- API service upload and error response parsing
 
 ### Backend Tests
+
+Execute the Python test suite:
+
 ```bash
 cd backend
 pytest -v
 ```
-- Verifies image decoding, four-corner registration, perspective transformation, and 30-question grid detection on reference sheets.
+
+Validates marker localization, perspective homography, and answer classification against clean template reference sheets.
 
 ---
 
-## 📝 Evaluation Logic & Rules
+## License
 
-| Answer Key | Candidate Bubble | Evaluated Status | Points Awarded |
-|---|---|---|---|
-| Option (e.g. `A`) | Matches Key (`A`) | ✅ Correct | `+1` |
-| Option (e.g. `A`) | Different Option (`B`) | ❌ Wrong | `0` |
-| Option (e.g. `A`) | No Bubble (`Blank`) | ⬜ Unattempted | `0` |
-| **Blank / Null** | **Any or None** | ✅ **Free Mark** | `+1` |
-
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
