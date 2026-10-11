@@ -16,11 +16,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def root():
+    return {
+        "title": "OMR Checker API",
+        "version": "0.1.0",
+        "docs_url": "/docs",
+        "health_url": "/health",
+    }
+
+
 @app.get("/health")
 def health_check():
     return {
         "status": "ok",
         "service": "omr-checker-api",
+        "version": "0.1.0",
     }
 
 @app.post("/api/v1/omr/process")
