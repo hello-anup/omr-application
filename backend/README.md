@@ -10,15 +10,19 @@ From `C:\Users\ANUP\omr-application\backend`:
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Health:
-`GET http://127.0.0.1:8000/health`
+Endpoints:
+- Root: `GET http://127.0.0.1:8000/`
+- Health: `GET http://127.0.0.1:8000/health`
+- Swagger: `http://127.0.0.1:8000/docs`
+- OMR processing: `POST /api/v1/omr/process` (multipart field `file`)
 
-Swagger:
-`http://127.0.0.1:8000/docs`
+## Test
 
-OMR processing:
-`POST /api/v1/omr/process`
-with multipart field `file`.
+Run pytest test suite:
+
+```powershell
+.\.venv\Scripts\pytest -v
+```
 
 ## Scope
 
