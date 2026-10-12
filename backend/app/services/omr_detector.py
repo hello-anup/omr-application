@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import cv2
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 from app.core.template_omr001 import (
     ANSWER_X_LEFT,
@@ -873,6 +876,7 @@ def process_omr_image(
     image = _decode_image(
         data
     )
+    logger.debug("Decoded image with shape: %s", image.shape)
 
     # ------------------------------------------------------------------------
     # 2. Detect four corner markers
@@ -906,6 +910,10 @@ def process_omr_image(
 
     answers, answer_debug = _decode_answers(
         gray
+    )
+    logger.info(
+        "OMR processing complete: %d answers decoded",
+        len(answers),
     )
 
     # ------------------------------------------------------------------------
