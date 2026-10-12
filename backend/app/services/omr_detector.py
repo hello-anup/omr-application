@@ -681,7 +681,7 @@ def _classify_answer(
     best_score = float(ordered[0])
     second_score = float(ordered[1])
 
-    confidence_gap = best_score - second_score
+    confidence_gap = float(best_score - second_score)
 
     # Clearly no bubble is significantly darker.
     if confidence_gap < 20:
