@@ -6,8 +6,8 @@ The four black registration markers are used to rectify a photo/scan to this
 coordinate system before reading fixed bubble positions.
 """
 
-IMAGE_WIDTH = 1370
-IMAGE_HEIGHT = 2048
+IMAGE_WIDTH: int = 1370
+IMAGE_HEIGHT: int = 2048
 
 MARKER_CENTRES = (
     (32.0, 79.0),      # top-left
