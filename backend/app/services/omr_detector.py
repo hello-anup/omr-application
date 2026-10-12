@@ -476,25 +476,10 @@ def _get_bubble_patch(
     cx = int(round(x))
     cy = int(round(y))
 
-    x1 = max(
-        0,
-        cx - radius,
-    )
-
-    y1 = max(
-        0,
-        cy - radius,
-    )
-
-    x2 = min(
-        gray.shape[1],
-        cx + radius + 1,
-    )
-
-    y2 = min(
-        gray.shape[0],
-        cy + radius + 1,
-    )
+    x1 = max(0, cx - radius)
+    y1 = max(0, cy - radius)
+    x2 = min(gray.shape[1], cx + radius + 1)
+    y2 = min(gray.shape[0], cy + radius + 1)
 
     patch = gray[
         y1:y2,
