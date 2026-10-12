@@ -34,3 +34,8 @@ def test_corrupted_image_data_raises_value_error():
     with pytest.raises(ValueError, match="not a valid image"):
         process_omr_image(b"not an image binary data")
 
+def test_random_bytes_payload_raises_value_error():
+    import pytest
+
+    with pytest.raises(ValueError, match="not a valid image"):
+        process_omr_image(b"\x00\x01\x02\x03\x04\x05")
