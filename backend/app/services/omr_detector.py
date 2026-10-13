@@ -27,17 +27,12 @@ OPTION_LABELS = ("ক", "খ", "গ", "ঘ")
 # ============================================================================
 
 def _decode_image(data: bytes) -> np.ndarray:
-    """
-    Decode uploaded image bytes into an OpenCV BGR image.
-    """
-
+    """Decode uploaded bytes into an OpenCV BGR image."""
     if not data:
         raise ValueError("Uploaded image is empty.")
 
     array = np.frombuffer(data, dtype=np.uint8)
-
     image = cv2.imdecode(array, cv2.IMREAD_COLOR)
-
     if image is None:
         raise ValueError("The uploaded file is not a valid image.")
 
