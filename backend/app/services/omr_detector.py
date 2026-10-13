@@ -505,14 +505,7 @@ def _bubble_darkness(
     if patch.size == 0:
         return 0.0
 
-    mean_darkness = (
-        255.0 - float(np.mean(patch))
-    )
-
-    return max(
-        0.0,
-        mean_darkness,
-    )
+    return max(0.0, 255.0 - float(np.mean(patch)))
 
 
 def _bubble_black_ratio(
