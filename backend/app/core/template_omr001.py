@@ -39,6 +39,6 @@ SUBJECT_Y = tuple(1476.0 + 44.5 * i for i in range(10))
 # The printed Bengali digit/option inside a blank bubble creates a small
 # amount of darkness. A filled bubble is much darker, so detection uses
 # conservative thresholds for the supplied OMR-001 sheet.
-BUBBLE_INNER_RADIUS = 10
-FILLED_DARKNESS_THRESHOLD = 150.0
-MIN_SCORE_GAP = 40.0
+BUBBLE_INNER_RADIUS: int = 10
+FILLED_DARKNESS_THRESHOLD: float = 150.0
+MIN_SCORE_GAP: float = 40.0
