@@ -33,6 +33,7 @@ def root():
 
 @app.get("/health")
 def health_check():
+    """Return service health and version metadata."""
     return {
         "status": "ok",
         "service": "omr-checker-api",
