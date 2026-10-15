@@ -1,6 +1,8 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../../models/exam.dart';
+
 class DatabaseService {
   DatabaseService._();
 
@@ -220,6 +222,11 @@ class DatabaseService {
       whereArgs: [examId],
       orderBy: 'created_at DESC',
     );
+  }
+
+  Future<List<StudentEvaluation>> getEvaluationsForExam(int examId) async {
+    final rows = await getStudentEvaluations(examId: examId);
+    return rows.map((row) => StudentEvaluation.fromMap(row)).toList();
   }
 
   Future<void> deleteExam(int examId) async {
