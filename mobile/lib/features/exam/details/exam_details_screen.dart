@@ -5,6 +5,7 @@ import '../../../services/database/database_service.dart';
 import '../../../services/image_picker_service.dart';
 import '../../../services/omr_api_service.dart';
 import '../manual/manual_answer_key_screen.dart';
+import '../results/exam_results_screen.dart';
 import '../../scanner/scanner_screen.dart';
 
 class ExamDetailsScreen extends StatefulWidget {
@@ -202,6 +203,17 @@ class _ExamDetailsScreenState extends State<ExamDetailsScreen> {
     );
   }
 
+  void _openResults() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ExamResultsScreen(
+          examId: widget.examId,
+          examName: widget.examName,
+        ),
+      ),
+    );
+  }
+
   String get _answerKeyStatus {
     if (_loadingKey) return 'Loading answer key...';
     if (_answerKey.isEmpty) return 'No answer key saved yet.';
@@ -308,6 +320,19 @@ class _ExamDetailsScreenState extends State<ExamDetailsScreen> {
                   ? const Icon(Icons.chevron_right)
                   : null,
               onTap: _answerKey.isNotEmpty ? _openEvaluation : null,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Card(
+            child: ListTile(
+              leading: Icon(
+                Icons.assessment_outlined,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              title: const Text('View Results & Export PDF'),
+              subtitle: const Text('Check student rankings and export PDF sheet'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _openResults,
             ),
           ),
         ],
