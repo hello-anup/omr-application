@@ -22,7 +22,7 @@ class DatabaseService {
 
     return openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE exams (
@@ -56,6 +56,16 @@ class DatabaseService {
             FOREIGN KEY (exam_id) REFERENCES exams(id)
           )
         ''');
+
+        await db.execute('''
+          CREATE TABLE institution_profiles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            address TEXT NOT NULL,
+            logo_path TEXT,
+            created_at TEXT NOT NULL
+          )
+        ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -82,6 +92,17 @@ class DatabaseService {
               blank_count INTEGER NOT NULL,
               created_at TEXT NOT NULL,
               FOREIGN KEY (exam_id) REFERENCES exams(id)
+            )
+          ''');
+        }
+        if (oldVersion < 4) {
+          await db.execute('''
+            CREATE TABLE institution_profiles (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              name TEXT NOT NULL,
+              address TEXT NOT NULL,
+              logo_path TEXT,
+              created_at TEXT NOT NULL
             )
           ''');
         }
@@ -254,5 +275,44 @@ class DatabaseService {
       );
       await txn.delete('exams', where: 'id = ?', whereArgs: [examId]);
     });
+  }
+
+  Future<void> saveInstitutionProfile({
+    required String name,
+    required String address,
+    String? logoPath,
+  }) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete('institution_profiles');
+      await txn.insert('institution_profiles', {
+        'name': name,
+        'address': address,
+        'logo_path': logoPath,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+    });
+  }
+
+  Future<Map<String, dynamic>?> getInstitutionProfile() async {
+    late final Database db;
+
+    try {
+      db = await database;
+    } on StateError catch (error) {
+      if (error.message.contains('databaseFactory not initialized')) {
+        return null;
+      }
+      rethrow;
+    }
+
+    final rows = await db.query(
+      'institution_profiles',
+      orderBy: 'id DESC',
+      limit: 1,
+    );
+
+    if (rows.isEmpty) return null;
+    return rows.first;
   }
 }
