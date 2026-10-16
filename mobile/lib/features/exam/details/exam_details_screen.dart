@@ -6,6 +6,7 @@ import '../../../services/image_picker_service.dart';
 import '../../../services/omr_api_service.dart';
 import '../manual/manual_answer_key_screen.dart';
 import '../results/exam_results_screen.dart';
+import '../../scanner/rapid_scan_screen.dart';
 import '../../scanner/scanner_screen.dart';
 
 class ExamDetailsScreen extends StatefulWidget {
@@ -203,6 +204,25 @@ class _ExamDetailsScreenState extends State<ExamDetailsScreen> {
     );
   }
 
+  void _openRapidScan() {
+    if (_answerKey.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Save an answer key first.')),
+      );
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RapidScanScreen(
+          examId: widget.examId,
+          examName: widget.examName,
+          answerKey: _answerKey,
+        ),
+      ),
+    );
+  }
+
   void _openResults() {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -320,6 +340,27 @@ class _ExamDetailsScreenState extends State<ExamDetailsScreen> {
                   ? const Icon(Icons.chevron_right)
                   : null,
               onTap: _answerKey.isNotEmpty ? _openEvaluation : null,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Card(
+            child: ListTile(
+              leading: Icon(
+                Icons.bolt,
+                color: _answerKey.isNotEmpty
+                    ? Colors.amber.shade800
+                    : Colors.grey,
+              ),
+              title: const Text('Rapid Scan'),
+              subtitle: Text(
+                _answerKey.isNotEmpty
+                    ? 'Continuous camera capture or multi-gallery with auto roll'
+                    : 'Save an answer key first to enable rapid scan',
+              ),
+              trailing: _answerKey.isNotEmpty
+                  ? const Icon(Icons.chevron_right)
+                  : null,
+              onTap: _answerKey.isNotEmpty ? _openRapidScan : null,
             ),
           ),
           const SizedBox(height: 10),
