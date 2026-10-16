@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../models/omr_result.dart';
 import '../../services/database/database_service.dart';
 import '../../services/evaluation_service.dart';
 import '../../services/image_picker_service.dart';
@@ -48,6 +47,18 @@ class RapidScanScreen extends StatefulWidget {
   final ImagePickerService? imagePickerService;
   final OmrApiService? omrApiService;
 
+  static String incrementRoll(String currentRoll) {
+    final match = RegExp(r'^(.*?)(\d+)$').firstMatch(currentRoll);
+    if (match != null) {
+      final prefix = match.group(1) ?? '';
+      final digits = match.group(2)!;
+      final nextNum = int.parse(digits) + 1;
+      final padded = nextNum.toString().padLeft(digits.length, '0');
+      return '$prefix$padded';
+    }
+    return '$currentRoll-1';
+  }
+
   @override
   State<RapidScanScreen> createState() => _RapidScanScreenState();
 }
@@ -76,18 +87,6 @@ class _RapidScanScreenState extends State<RapidScanScreen> {
     super.dispose();
   }
 
-  static String incrementRoll(String currentRoll) {
-    final match = RegExp(r'^(.*?)(\d+)$').firstMatch(currentRoll);
-    if (match != null) {
-      final prefix = match.group(1) ?? '';
-      final digits = match.group(2)!;
-      final nextNum = int.parse(digits) + 1;
-      final padded = nextNum.toString().padLeft(digits.length, '0');
-      return '$prefix$padded';
-    }
-    return '$currentRoll-1';
-  }
-
   Future<void> _captureCamera() async {
     final currentRoll = _rollController.text.trim().isEmpty
         ? _nextRoll
@@ -103,7 +102,7 @@ class _RapidScanScreenState extends State<RapidScanScreen> {
         roll: currentRoll,
       );
 
-      final next = incrementRoll(currentRoll);
+      final next = RapidScanScreen.incrementRoll(currentRoll);
 
       setState(() {
         _queue.add(newItem);
@@ -140,7 +139,7 @@ class _RapidScanScreenState extends State<RapidScanScreen> {
             roll: rollTracker,
           ),
         );
-        rollTracker = incrementRoll(rollTracker);
+        rollTracker = RapidScanScreen.incrementRoll(rollTracker);
       }
 
       setState(() {
@@ -412,7 +411,7 @@ class _RapidScanScreenState extends State<RapidScanScreen> {
                 : ListView.separated(
                     padding: const EdgeInsets.all(16),
                     itemCount: _queue.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (context, index) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final item = _queue[index];
                       return Card(

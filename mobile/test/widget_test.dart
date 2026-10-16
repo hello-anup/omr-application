@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/exam/details/exam_details_screen.dart';
 import 'package:mobile/features/processing/processing_screen.dart';
 import 'package:mobile/features/result/result_screen.dart';
+import 'package:mobile/features/scanner/rapid_scan_screen.dart';
 import 'package:mobile/features/scanner/scanner_screen.dart';
 import 'package:mobile/main.dart';
 import 'package:mobile/models/omr_result.dart';
@@ -97,7 +98,10 @@ void main() {
     expect(find.text('Manual Input'), findsOneWidget);
     expect(find.text('Scan Solution Sheet'), findsOneWidget);
     expect(find.text('Evaluation'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
     expect(find.text('Evaluate Students'), findsOneWidget);
+    expect(find.text('Rapid Scan'), findsOneWidget);
   });
 
   testWidgets('scanner screen shows roll number input field', (tester) async {
@@ -246,4 +250,37 @@ void main() {
       expect(deleted, isTrue);
     },
   );
+
+  test('RapidScanScreen roll increment helper logic', () {
+    expect(RapidScanScreen.incrementRoll('101'), '102');
+    expect(RapidScanScreen.incrementRoll('09'), '10');
+    expect(RapidScanScreen.incrementRoll('ROLL-005'), 'ROLL-006');
+    expect(RapidScanScreen.incrementRoll('99'), '100');
+  });
+
+  testWidgets('rapid scan screen shows roll input, snap button and pick gallery', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: RapidScanScreen(
+          examId: 1,
+          examName: 'Math Finals',
+          answerKey: {1: 'A', 2: 'B'},
+          initialRoll: '101',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Rapid Scan'), findsOneWidget);
+    expect(find.text('Math Finals'), findsOneWidget);
+    expect(find.text('Next Student Roll Number'), findsOneWidget);
+    expect(find.text('101'), findsOneWidget);
+    expect(find.text('Snap Photo'), findsOneWidget);
+    expect(find.text('Pick Gallery'), findsOneWidget);
+    expect(find.text('Rapid Scan Ready'), findsOneWidget);
+    expect(find.text('View All Results & Rankings'), findsOneWidget);
+  });
 }
+
