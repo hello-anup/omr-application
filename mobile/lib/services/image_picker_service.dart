@@ -12,4 +12,8 @@ class ImagePickerService {
   Future<XFile?> pickFromGallery() {
     return _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
   }
+
+  Future<List<XFile>> pickMultiFromGallery() {
+    return _picker.pickMultiImage(imageQuality: 85);
+  }
 }
