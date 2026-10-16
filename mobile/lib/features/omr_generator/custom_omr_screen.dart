@@ -162,7 +162,7 @@ class _CustomOmrScreenState extends State<CustomOmrScreen> {
       );
 
       final sanitizedName = name.replaceAll(RegExp(r'[^\w\s-]'), '_');
-      final fileName = 'omr_sheet_${sanitizedName}.pdf';
+      final fileName = 'omr_sheet_$sanitizedName.pdf';
 
       await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
     } catch (e) {

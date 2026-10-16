@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/exam/details/exam_details_screen.dart';
 import 'package:mobile/features/processing/processing_screen.dart';
 import 'package:mobile/features/result/result_screen.dart';
+import 'package:mobile/features/omr_generator/custom_omr_screen.dart';
 import 'package:mobile/features/scanner/rapid_scan_screen.dart';
 import 'package:mobile/features/scanner/scanner_screen.dart';
 import 'package:mobile/main.dart';
@@ -16,6 +17,7 @@ void main() {
     expect(find.text('OMR Checker'), findsOneWidget);
     expect(find.text('Create and evaluate exams'), findsOneWidget);
     expect(find.text('Create Exam'), findsOneWidget);
+    expect(find.text('Generate OMR Sheet'), findsOneWidget);
     expect(find.text('Created Exams'), findsOneWidget);
   });
 
@@ -282,5 +284,29 @@ void main() {
     expect(find.text('Rapid Scan Ready'), findsOneWidget);
     expect(find.text('View All Results & Rankings'), findsOneWidget);
   });
+
+  testWidgets('custom omr screen shows form fields and action buttons', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: CustomOmrScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Custom OMR Generator'), findsOneWidget);
+    expect(find.text('Custom Institution OMR Sheet'), findsOneWidget);
+    expect(find.text('Institution Name *'), findsOneWidget);
+    expect(find.text('Institution Address'), findsOneWidget);
+    expect(find.text('Institution Logo'), findsOneWidget);
+    expect(find.text('Pick Logo'), findsOneWidget);
+    expect(find.text('Export OMR Sheet (PDF)'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
+    expect(find.text('Preview & Print Directly'), findsOneWidget);
+    expect(find.text('Save Profile for Future Use'), findsOneWidget);
+  });
 }
+
 

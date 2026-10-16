@@ -5,6 +5,7 @@ import '../../services/database/database_service.dart';
 import '../../services/omr_api_service.dart';
 import '../exam/create/create_exam_screen.dart';
 import '../exam/details/exam_details_screen.dart';
+import '../omr_generator/custom_omr_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -43,6 +44,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (created == true) {
       await _loadExams();
     }
+  }
+
+  void _openCustomOmr() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const CustomOmrScreen()),
+    );
   }
 
   Future<void> _deleteExam(int examId) async {
@@ -94,7 +101,10 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              _HeroPanel(onCreateExam: _openCreateExam),
+              _HeroPanel(
+                onCreateExam: _openCreateExam,
+                onGenerateOmr: _openCustomOmr,
+              ),
               const SizedBox(height: 28),
               Text(
                 'Created Exams',
@@ -133,9 +143,13 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _HeroPanel extends StatelessWidget {
-  const _HeroPanel({required this.onCreateExam});
+  const _HeroPanel({
+    required this.onCreateExam,
+    required this.onGenerateOmr,
+  });
 
   final VoidCallback onCreateExam;
+  final VoidCallback onGenerateOmr;
 
   @override
   Widget build(BuildContext context) {
@@ -169,10 +183,21 @@ class _HeroPanel extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: onCreateExam,
-              icon: const Icon(Icons.add),
-              label: const Text('Create Exam'),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                FilledButton.icon(
+                  onPressed: onCreateExam,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Create Exam'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: onGenerateOmr,
+                  icon: const Icon(Icons.print_outlined),
+                  label: const Text('Generate OMR Sheet'),
+                ),
+              ],
             ),
           ],
         ),
