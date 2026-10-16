@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_strings.dart';
 import '../../services/database/database_service.dart';
+import '../../services/omr_api_service.dart';
 import '../exam/create/create_exam_screen.dart';
 import '../exam/details/exam_details_screen.dart';
-
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadExams();
+    OmrApiService().warmUp();
   }
 
   Future<void> _loadExams() async {

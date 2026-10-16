@@ -38,6 +38,18 @@ class OmrApiService {
 
   final String baseUrl;
 
+  Future<void> warmUp() async {
+    for (final candidateBaseUrl in _candidateBaseUrls) {
+      try {
+        final uri = Uri.parse('$candidateBaseUrl/health');
+        await http.get(uri).timeout(const Duration(seconds: 15));
+        break;
+      } catch (_) {
+        // Silently ignore warmup errors
+      }
+    }
+  }
+
   Future<OmrResult> processImage({
     required String imagePath,
     required String imageName,
@@ -60,7 +72,7 @@ class OmrApiService {
 
       try {
         final streamed = await request.send().timeout(
-          const Duration(seconds: 60),
+          const Duration(seconds: 120),
         );
         final response = await http.Response.fromStream(streamed);
 
@@ -97,7 +109,9 @@ class OmrApiService {
     }
 
     final tried = attemptedUrls.join(', ');
-    final detail = lastNetworkError == null ? '' : ' ($lastNetworkError)';
+    final detail = lastNetworkError is TimeoutException
+        ? ' (Server timeout: Render free instance is waking up from sleep. Please try again now.)'
+        : (lastNetworkError == null ? '' : ' ($lastNetworkError)');
     throw OmrApiException(
       'Cannot connect to OMR server. Tried: $tried. '
       'Make sure the backend is running on port 8000.$detail',
