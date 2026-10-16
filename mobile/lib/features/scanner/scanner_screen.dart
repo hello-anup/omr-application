@@ -1,6 +1,5 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../services/image_picker_service.dart';
@@ -115,9 +114,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
             const SizedBox(height: 18),
             TextField(
               controller: _rollController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               decoration: const InputDecoration(
                 labelText: 'Student Roll Number',
-                hintText: 'e.g. 101 or 2024-001',
+                hintText: 'e.g. 101',
                 prefixIcon: Icon(Icons.badge_outlined),
                 border: OutlineInputBorder(),
               ),

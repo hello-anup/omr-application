@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../services/database/database_service.dart';
@@ -282,10 +283,11 @@ class _RapidScanScreenState extends State<RapidScanScreen> {
                     const SizedBox(height: 12),
                     TextField(
                       controller: _rollController,
-                      keyboardType: TextInputType.text,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: const InputDecoration(
                         labelText: 'Next Student Roll Number',
-                        hintText: 'e.g. 101 or A-001',
+                        hintText: 'e.g. 101',
                         prefixIcon: Icon(Icons.badge_outlined),
                         border: OutlineInputBorder(),
                         isDense: true,
