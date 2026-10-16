@@ -1,8 +1,5 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as p;
-import 'package:sqflite/sqflite.dart';
+import 'package:printing/printing.dart';
 
 import '../../../models/exam.dart';
 import '../../../services/database/database_service.dart';
@@ -62,42 +59,10 @@ class _ExamResultsScreenState extends State<ExamResultsScreen> {
         evaluations: _evaluations,
       );
 
-      // Save PDF into application files directory
-      final baseDir = await getDatabasesPath();
       final sanitizedName = widget.examName.replaceAll(RegExp(r'[^\w\s-]'), '_');
-      final fileName = 'result_${sanitizedName}_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      final filePath = p.join(baseDir, fileName);
+      final fileName = 'result_$sanitizedName.pdf';
 
-      final file = File(filePath);
-      await file.writeAsBytes(pdfBytes);
-
-      if (!mounted) return;
-
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          icon: const Icon(Icons.check_circle_outline, color: Colors.green, size: 48),
-          title: const Text('PDF Exported Successfully'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('The evaluation sheet has been saved on this mobile device:'),
-              const SizedBox(height: 12),
-              SelectableText(
-                filePath,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
+      await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
