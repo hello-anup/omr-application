@@ -49,12 +49,16 @@ def _find_corner_markers(
     """
     Detect the four black registration markers around the OMR sheet.
 
-    Returned order:
+    Handles both direct scans and mobile camera photos taken on any
+    contrasting background (e.g. bedsheet, desk, wooden table, floor).
 
+    Returned order:
         TL, TR, BR, BL
     """
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    height, width = gray.shape
+    image_area = float(width * height)
 
     blurred = cv2.GaussianBlur(
         gray,
@@ -80,42 +84,62 @@ def _find_corner_markers(
         kernel,
     )
 
-    contours, _ = cv2.findContours(
-        binary,
+    # ------------------------------------------------------------------------
+    # Detect paper bounding box if sheet is on a contrasting background
+    # ------------------------------------------------------------------------
+    _, paper_mask = cv2.threshold(
+        blurred,
+        0,
+        255,
+        cv2.THRESH_BINARY + cv2.THRESH_OTSU,
+    )
+    paper_contours, _ = cv2.findContours(
+        paper_mask,
         cv2.RETR_EXTERNAL,
         cv2.CHAIN_APPROX_SIMPLE,
     )
+    paper_contours = sorted(paper_contours, key=cv2.contourArea, reverse=True)
 
-    height, width = gray.shape
-    image_area = float(width * height)
+    paper_box: tuple[int, int, int, int] | None = None
+    if paper_contours and 0.20 * image_area <= cv2.contourArea(paper_contours[0]) <= 0.95 * image_area:
+        c = paper_contours[0]
+        x, y, pw, ph = cv2.boundingRect(c)
+        if 0.45 <= pw / float(max(ph, 1)) <= 1.15:
+            paper_box = (x, y, pw, ph)
+
+    if paper_box is not None:
+        px, py, pw, ph = paper_box
+        ref_area = float(pw * ph)
+    else:
+        px, py, pw, ph = 0, 0, width, height
+        ref_area = image_area
+
+    # Use RETR_LIST so contours on the paper are never hidden by background borders
+    contours, _ = cv2.findContours(
+        binary,
+        cv2.RETR_LIST,
+        cv2.CHAIN_APPROX_SIMPLE,
+    )
 
     candidates: list[dict[str, float]] = []
 
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
-
         area = float(w * h)
 
         if area <= 0:
             continue
 
-        # Ignore tiny noise.
-        if area < image_area * 0.00015:
-            continue
-
-        # Ignore very large regions.
-        if area > image_area * 0.025:
+        # Ignore tiny noise or huge elements relative to sheet area
+        if area < ref_area * 0.0003 or area > ref_area * 0.025:
             continue
 
         aspect = w / float(max(h, 1))
-
         if not 0.65 <= aspect <= 1.35:
             continue
 
         contour_area = cv2.contourArea(contour)
-
         fill_ratio = contour_area / max(area, 1.0)
-
         if fill_ratio < 0.65:
             continue
 
@@ -123,7 +147,6 @@ def _find_corner_markers(
             contour,
             True,
         )
-
         if perimeter <= 0:
             continue
 
@@ -132,12 +155,16 @@ def _find_corner_markers(
             0.04 * perimeter,
             True,
         )
-
         if len(approx) < 4 or len(approx) > 6:
             continue
 
         cx = x + (w / 2.0)
         cy = y + (h / 2.0)
+
+        # Must be located inside the paper region (with a slight margin for edge curvature)
+        if paper_box is not None:
+            if not (px - 15 <= cx <= px + pw + 15 and py - 15 <= cy <= py + ph + 15):
+                continue
 
         candidates.append(
             {
@@ -157,133 +184,58 @@ def _find_corner_markers(
         )
 
     # ------------------------------------------------------------------------
-    # Expected corner positions
+    # Group candidates into 4 sheet quadrants relative to paper center
     # ------------------------------------------------------------------------
+    cx_center = px + pw / 2.0
+    cy_center = py + ph / 2.0
 
-    expected = {
-        "tl": np.array(
-            [0.06 * width, 0.06 * height],
-            dtype=np.float32,
-        ),
-        "tr": np.array(
-            [0.94 * width, 0.06 * height],
-            dtype=np.float32,
-        ),
-        "br": np.array(
-            [0.94 * width, 0.94 * height],
-            dtype=np.float32,
-        ),
-        "bl": np.array(
-            [0.06 * width, 0.94 * height],
-            dtype=np.float32,
-        ),
-    }
+    tl_cands = [c for c in candidates if c["x"] < cx_center and c["y"] < cy_center]
+    tr_cands = [c for c in candidates if c["x"] >= cx_center and c["y"] < cy_center]
+    bl_cands = [c for c in candidates if c["x"] < cx_center and c["y"] >= cy_center]
+    br_cands = [c for c in candidates if c["x"] >= cx_center and c["y"] >= cy_center]
 
-    image_diagonal = float(
-        np.hypot(width, height)
-    )
-
-    # ------------------------------------------------------------------------
-    # Select unique candidate for each corner.
-    # ------------------------------------------------------------------------
-
-    assignments: list[
-        tuple[float, str, dict[str, float]]
-    ] = []
-
-    for candidate in candidates:
-        point = np.array(
-            [
-                candidate["x"],
-                candidate["y"],
-            ],
-            dtype=np.float32,
+    if not (tl_cands and tr_cands and bl_cands and br_cands):
+        raise ValueError(
+            "Corner markers could not be identified in all four quadrants."
         )
 
-        for corner_name, target in expected.items():
-            distance = float(
-                np.linalg.norm(point - target)
-            )
+    # Sort each quadrant by distance to the respective corner of the paper box
+    tl_sorted = sorted(tl_cands, key=lambda c: np.hypot(c["x"] - px, c["y"] - py))
+    tr_sorted = sorted(tr_cands, key=lambda c: np.hypot((px + pw) - c["x"], c["y"] - py))
+    bl_sorted = sorted(bl_cands, key=lambda c: np.hypot(c["x"] - px, (py + ph) - c["y"]))
+    br_sorted = sorted(br_cands, key=lambda c: np.hypot((px + pw) - c["x"], (py + ph) - c["y"]))
 
-            normalized_distance = (
-                distance / max(image_diagonal, 1.0)
-            )
+    best_quad: tuple[dict[str, float], dict[str, float], dict[str, float], dict[str, float]] | None = None
+    best_score = float("inf")
 
-            if normalized_distance <= 0.30:
-                assignments.append(
-                    (
-                        normalized_distance,
-                        corner_name,
-                        candidate,
+    # Match mutually consistent square sizes among the top extreme candidates in each quadrant
+    for tl in tl_sorted[:4]:
+        for tr in tr_sorted[:4]:
+            for br in br_sorted[:4]:
+                for bl in bl_sorted[:4]:
+                    areas = [tl["area"], tr["area"], br["area"], bl["area"]]
+                    area_ratio = min(areas) / float(max(areas))
+                    if area_ratio < 0.50:
+                        continue
+                    dist_sum = (
+                        np.hypot(tl["x"] - px, tl["y"] - py)
+                        + np.hypot((px + pw) - tr["x"], tr["y"] - py)
+                        + np.hypot((px + pw) - br["x"], (py + ph) - br["y"])
+                        + np.hypot(bl["x"] - px, (py + ph) - bl["y"])
                     )
-                )
+                    if dist_sum < best_score:
+                        best_score = dist_sum
+                        best_quad = (tl, tr, br, bl)
 
-    assignments.sort(
-        key=lambda item: item[0]
-    )
+    if best_quad is None:
+        best_quad = (tl_sorted[0], tr_sorted[0], br_sorted[0], bl_sorted[0])
 
-    selected: dict[str, dict[str, float]] = {}
-
-    used_candidate_ids: set[int] = set()
-
-    for _, corner_name, candidate in assignments:
-        candidate_id = id(candidate)
-
-        if corner_name in selected:
-            continue
-
-        if candidate_id in used_candidate_ids:
-            continue
-
-        selected[corner_name] = candidate
-        used_candidate_ids.add(candidate_id)
-
-        if len(selected) == 4:
-            break
-
-    # ------------------------------------------------------------------------
-    # Fallback: geometric extreme points
-    # ------------------------------------------------------------------------
-
-    if len(selected) < 4:
-        points = np.array(
-            [
-                [
-                    candidate["x"],
-                    candidate["y"],
-                ]
-                for candidate in candidates
-            ],
-            dtype=np.float32,
-        )
-
-        sums = points[:, 0] + points[:, 1]
-        differences = points[:, 0] - points[:, 1]
-
-        tl_index = int(
-            np.argmin(sums)
-        )
-
-        tr_index = int(
-            np.argmin(
-                points[:, 1] - points[:, 0]
-            )
-        )
-
-        br_index = int(
-            np.argmax(sums)
-        )
-
-        bl_index = int(
-            np.argmax(differences)
-        )
-
-        selected = {
-            "tl": candidates[tl_index],
-            "tr": candidates[tr_index],
-            "br": candidates[br_index],
-            "bl": candidates[bl_index],
-        }
+    selected = {
+        "tl": best_quad[0],
+        "tr": best_quad[1],
+        "br": best_quad[2],
+        "bl": best_quad[3],
+    }
 
     # ------------------------------------------------------------------------
     # Validate uniqueness.
