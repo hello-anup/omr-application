@@ -124,15 +124,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 const _EmptyExams()
               else
                 ..._exams.map(
-                  (exam) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _ExamCard(
-                      examId: (exam['id'] as num).toInt(),
-                      name: exam['name'].toString(),
-                      createdAt: _formatDate(exam['created_at'].toString()),
-                      onDelete: () => _deleteExam((exam['id'] as num).toInt()),
-                    ),
-                  ),
+                  (exam) {
+                    final courseName =
+                        (exam['course_name'] as String?)?.isNotEmpty == true
+                            ? exam['course_name'].toString()
+                            : exam['name'].toString();
+                    final courseCode = exam['course_code']?.toString() ?? '';
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _ExamCard(
+                        examId: (exam['id'] as num).toInt(),
+                        courseName: courseName,
+                        courseCode: courseCode,
+                        createdAt: _formatDate(exam['created_at'].toString()),
+                        onDelete: () => _deleteExam((exam['id'] as num).toInt()),
+                      ),
+                    );
+                  },
                 ),
             ],
           ),
@@ -244,24 +252,60 @@ class _EmptyExams extends StatelessWidget {
 class _ExamCard extends StatelessWidget {
   const _ExamCard({
     required this.examId,
-    required this.name,
+    required this.courseName,
+    required this.courseCode,
     required this.createdAt,
     required this.onDelete,
   });
 
   final int examId;
-  final String name;
+  final String courseName;
+  final String courseCode;
   final String createdAt;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
+    final displayName =
+        courseCode.isNotEmpty ? '$courseCode - $courseName' : courseName;
+
     return Card(
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-        leading: const CircleAvatar(child: Icon(Icons.assignment_outlined)),
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: Text('Created: $createdAt'),
+        leading: const CircleAvatar(child: Icon(Icons.school_outlined)),
+        title: Row(
+          children: [
+            if (courseCode.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  courseCode,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
+            ],
+            Expanded(
+              child: Text(
+                courseName,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text('Created: $createdAt'),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -276,7 +320,12 @@ class _ExamCard extends StatelessWidget {
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => ExamDetailsScreen(examId: examId, examName: name),
+              builder: (_) => ExamDetailsScreen(
+                examId: examId,
+                examName: displayName,
+                courseName: courseName,
+                courseCode: courseCode,
+              ),
             ),
           );
         },

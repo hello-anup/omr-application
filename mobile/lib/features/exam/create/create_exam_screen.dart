@@ -10,21 +10,31 @@ class CreateExamScreen extends StatefulWidget {
 }
 
 class _CreateExamScreenState extends State<CreateExamScreen> {
-  final _nameController = TextEditingController();
+  final _courseNameController = TextEditingController();
+  final _courseCodeController = TextEditingController();
   bool _isCreating = false;
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _courseNameController.dispose();
+    _courseCodeController.dispose();
     super.dispose();
   }
 
   Future<void> _createExam() async {
-    final name = _nameController.text.trim();
+    final courseName = _courseNameController.text.trim();
+    final courseCode = _courseCodeController.text.trim();
 
-    if (name.isEmpty) {
+    if (courseName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter an exam name.')),
+        const SnackBar(content: Text('Please enter a course name.')),
+      );
+      return;
+    }
+
+    if (courseCode.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a course code.')),
       );
       return;
     }
@@ -34,7 +44,10 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
     });
 
     try {
-      await DatabaseService.instance.createExam(name: name);
+      await DatabaseService.instance.createExam(
+        courseName: courseName,
+        courseCode: courseCode,
+      );
 
       if (!mounted) return;
       Navigator.of(context).pop(true);
@@ -78,18 +91,30 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Give your exam a name to get started.',
+                      'Enter course details to get started.',
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 24),
                     TextField(
-                      controller: _nameController,
+                      controller: _courseNameController,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Course Name *',
+                        hintText: 'e.g. Physics / Data Structures',
+                        prefixIcon: Icon(Icons.menu_book_outlined),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _courseCodeController,
                       textInputAction: TextInputAction.done,
+                      textCapitalization: TextCapitalization.characters,
                       onSubmitted: (_) => _createExam(),
                       decoration: const InputDecoration(
-                        labelText: 'Exam name',
-                        hintText: 'e.g. Physics Midterm',
-                        prefixIcon: Icon(Icons.edit_outlined),
+                        labelText: 'Course Code *',
+                        hintText: 'e.g. PHY-101 / CSE-2101',
+                        prefixIcon: Icon(Icons.tag_outlined),
                         border: OutlineInputBorder(),
                       ),
                     ),

@@ -14,10 +14,14 @@ class ExamDetailsScreen extends StatefulWidget {
     super.key,
     required this.examId,
     required this.examName,
+    this.courseName,
+    this.courseCode,
   });
 
   final int examId;
   final String examName;
+  final String? courseName;
+  final String? courseCode;
 
   @override
   State<ExamDetailsScreen> createState() => _ExamDetailsScreenState();
@@ -229,6 +233,8 @@ class _ExamDetailsScreenState extends State<ExamDetailsScreen> {
         builder: (_) => ExamResultsScreen(
           examId: widget.examId,
           examName: widget.examName,
+          courseName: widget.courseName,
+          courseCode: widget.courseCode,
         ),
       ),
     );
@@ -248,11 +254,37 @@ class _ExamDetailsScreenState extends State<ExamDetailsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text(
-            widget.examName,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (widget.courseCode != null && widget.courseCode!.isNotEmpty) ...[
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  margin: const EdgeInsets.only(right: 10, top: 2),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    widget.courseCode!,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+              ],
+              Expanded(
+                child: Text(
+                  widget.courseName ?? widget.examName,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Card(

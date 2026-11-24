@@ -22,11 +22,13 @@ class DatabaseService {
 
     return openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE exams (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            course_name TEXT NOT NULL,
+            course_code TEXT NOT NULL,
             name TEXT NOT NULL,
             created_at TEXT NOT NULL
           )
@@ -106,15 +108,29 @@ class DatabaseService {
             )
           ''');
         }
+        if (oldVersion < 5) {
+          await db.execute('ALTER TABLE exams ADD COLUMN course_name TEXT');
+          await db.execute('ALTER TABLE exams ADD COLUMN course_code TEXT');
+          await db.execute(
+            "UPDATE exams SET course_name = name, course_code = '' WHERE course_name IS NULL",
+          );
+        }
       },
     );
   }
 
-  Future<int> createExam({required String name}) async {
+  Future<int> createExam({
+    required String courseName,
+    required String courseCode,
+    String? name,
+  }) async {
     final db = await database;
+    final fallbackName = name ?? (courseCode.isNotEmpty ? '$courseCode - $courseName' : courseName);
 
     return db.insert('exams', {
-      'name': name,
+      'course_name': courseName,
+      'course_code': courseCode,
+      'name': fallbackName,
       'created_at': DateTime.now().toIso8601String(),
     });
   }

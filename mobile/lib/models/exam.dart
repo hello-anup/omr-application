@@ -1,20 +1,29 @@
 class Exam {
   const Exam({
     required this.id,
-    required this.name,
+    required this.courseName,
+    required this.courseCode,
+    String? name,
     required this.createdAt,
     required this.answerKey,
-  });
+  }) : name = name ?? (courseCode.isNotEmpty ? '$courseCode - $courseName' : courseName);
 
   final int? id;
+  final String courseName;
+  final String courseCode;
   final String name;
   final DateTime createdAt;
   final List<String> answerKey;
 
   factory Exam.fromMap(Map<String, Object?> map, List<String> answerKey) {
+    final cName = (map['course_name'] as String?) ?? (map['name'] as String? ?? '');
+    final cCode = (map['course_code'] as String?) ?? '';
+
     return Exam(
       id: map['id'] as int?,
-      name: map['name'] as String,
+      courseName: cName,
+      courseCode: cCode,
+      name: (map['name'] as String?) ?? (cCode.isNotEmpty ? '$cCode - $cName' : cName),
       createdAt: DateTime.parse(map['created_at'] as String),
       answerKey: answerKey,
     );

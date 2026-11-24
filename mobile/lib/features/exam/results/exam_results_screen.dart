@@ -10,10 +10,14 @@ class ExamResultsScreen extends StatefulWidget {
     super.key,
     required this.examId,
     required this.examName,
+    this.courseName,
+    this.courseCode,
   });
 
   final int examId;
   final String examName;
+  final String? courseName;
+  final String? courseCode;
 
   @override
   State<ExamResultsScreen> createState() => _ExamResultsScreenState();
@@ -56,6 +60,8 @@ class _ExamResultsScreenState extends State<ExamResultsScreen> {
     try {
       final pdfBytes = await PdfExportService.instance.generateExamResultPdf(
         examName: widget.examName,
+        courseName: widget.courseName,
+        courseCode: widget.courseCode,
         evaluations: _evaluations,
       );
 

@@ -7,6 +7,7 @@ import 'package:mobile/features/omr_generator/custom_omr_screen.dart';
 import 'package:mobile/features/scanner/rapid_scan_screen.dart';
 import 'package:mobile/features/scanner/scanner_screen.dart';
 import 'package:mobile/main.dart';
+import 'package:mobile/models/exam.dart';
 import 'package:mobile/models/omr_result.dart';
 
 void main() {
@@ -29,7 +30,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Create a new exam'), findsOneWidget);
-    expect(find.text('Exam name'), findsOneWidget);
+    expect(find.text('Course Name *'), findsOneWidget);
+    expect(find.text('Course Code *'), findsOneWidget);
   });
 
   testWidgets('processing screen shows staged detection pipeline', (
@@ -306,6 +308,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Preview & Print Directly'), findsOneWidget);
     expect(find.text('Save Profile for Future Use'), findsOneWidget);
+  });
+
+  test('Exam model correctly initializes and parses course name and course code', () {
+    final exam = Exam.fromMap({
+      'id': 1,
+      'course_name': 'Data Structures',
+      'course_code': 'CSE-2101',
+      'created_at': DateTime.now().toIso8601String(),
+    }, ['A', 'B']);
+
+    expect(exam.courseName, 'Data Structures');
+    expect(exam.courseCode, 'CSE-2101');
+    expect(exam.name, 'CSE-2101 - Data Structures');
   });
 }
 

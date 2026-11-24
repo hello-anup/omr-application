@@ -12,6 +12,8 @@ class PdfExportService {
 
   Future<Uint8List> generateExamResultPdf({
     required String examName,
+    String? courseName,
+    String? courseCode,
     required List<StudentEvaluation> evaluations,
   }) async {
     final pdf = pw.Document();
@@ -24,6 +26,17 @@ class PdfExportService {
     final averageScore = sortedEvaluations.isEmpty
         ? 0.0
         : sortedEvaluations.map((e) => e.score).reduce((a, b) => a + b) / totalStudents;
+
+    final String courseLabel;
+    if (courseName != null && courseName.isNotEmpty) {
+      if (courseCode != null && courseCode.isNotEmpty) {
+        courseLabel = 'Course: $courseName ($courseCode)';
+      } else {
+        courseLabel = 'Course: $courseName';
+      }
+    } else {
+      courseLabel = 'Course: $examName';
+    }
 
     pdf.addPage(
       pw.MultiPage(
@@ -42,7 +55,7 @@ class PdfExportService {
             ),
             pw.SizedBox(height: 4),
             pw.Text(
-              'Exam: $examName',
+              courseLabel,
               style: pw.TextStyle(
                 fontSize: 14,
                 fontWeight: pw.FontWeight.bold,
