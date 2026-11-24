@@ -1,5 +1,5 @@
 class Exam {
-  const Exam({
+  Exam({
     required this.id,
     required this.courseName,
     required this.courseCode,
