@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 import '../models/omr_result.dart';
 
@@ -59,6 +60,14 @@ class OmrApiService {
 
     for (final candidateBaseUrl in _candidateBaseUrls) {
       attemptedUrls.add(candidateBaseUrl);
+      final lowerName = imageName.toLowerCase();
+      final MediaType mediaType;
+      if (lowerName.endsWith('.png')) {
+        mediaType = MediaType('image', 'png');
+      } else {
+        mediaType = MediaType('image', 'jpeg');
+      }
+
       final uri = Uri.parse('$candidateBaseUrl/api/v1/omr/process');
       final request = http.MultipartRequest('POST', uri)
         ..headers['Accept'] = 'application/json'
@@ -67,6 +76,7 @@ class OmrApiService {
             'file',
             imagePath,
             filename: imageName,
+            contentType: mediaType,
           ),
         );
 

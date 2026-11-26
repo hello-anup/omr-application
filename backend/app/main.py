@@ -10,7 +10,14 @@ logger = logging.getLogger(__name__)
 APP_NAME = "OMR Checker API"
 APP_VERSION = "0.1.0"
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
-ALLOWED_TYPES = {"image/jpeg", "image/png", "image/jpg"}
+ALLOWED_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/jpg",
+    "image/pjpeg",
+    "application/octet-stream",
+}
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 app = FastAPI(
     title=APP_NAME,
@@ -43,7 +50,11 @@ def health_check():
 
 @app.post("/api/v1/omr/process")
 async def process_omr(file: UploadFile = File(...)):
-    if file.content_type not in ALLOWED_TYPES:
+    content_type = (file.content_type or "").split(";")[0].strip().lower()
+    filename = (file.filename or "").lower()
+    has_valid_ext = any(filename.endswith(ext) for ext in ALLOWED_EXTENSIONS)
+
+    if content_type and content_type not in ALLOWED_TYPES and not has_valid_ext:
         raise HTTPException(status_code=415, detail="Please upload a JPEG or PNG image.")
 
     data = await file.read()
