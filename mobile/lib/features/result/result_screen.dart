@@ -92,6 +92,7 @@ class _ResultScreenState extends State<ResultScreen> {
 
     // Special rule: If answer key is Blank/null, EVERY student gets mark
     if (key == null) return true;
+    if (answer.needsReview) return false;
     return selected != null && key == selected;
   }
 
@@ -104,19 +105,20 @@ class _ResultScreenState extends State<ResultScreen> {
 
     // Blank answer key gives free mark, so it is never wrong
     if (key == null) return false;
+    if (answer.needsReview) return true;
     return selected != null && selected != key;
   }
 
   bool _isBlank(DetectedAnswer answer) {
     final hasKey = widget.answerKey.containsKey(answer.questionNumber);
-    if (!hasKey) return _selectedFor(answer) == null;
+    if (!hasKey) return _selectedFor(answer) == null && !answer.needsReview;
 
     final key = _keyFor(answer.questionNumber);
     final selected = _selectedFor(answer);
 
     // If key is null, question counts as correct (free mark)
     if (key == null) return false;
-    return selected == null;
+    return selected == null && !answer.needsReview;
   }
 
   int get correctCount => widget.result.answers.where(_isCorrect).length;

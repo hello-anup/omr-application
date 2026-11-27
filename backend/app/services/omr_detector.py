@@ -285,9 +285,13 @@ def _classify_answer(scores: list[float]) -> tuple[str | None, str, float]:
     darkest, runner_up = sorted(scores, reverse=True)[:2]
     gap = float(darkest - runner_up)
 
-    if gap >= MARKED_MIN_GAP and darkest >= MARKED_MIN_SCORE:
-        return OPTION_LABELS[int(np.argmax(scores))], "marked", gap
-    return None, "blank", gap
+    if darkest < MARKED_MIN_SCORE:
+        return None, "blank", gap
+
+    if runner_up >= MARKED_MIN_SCORE or gap < MARKED_MIN_GAP:
+        return None, "ambiguous", gap
+
+    return OPTION_LABELS[int(np.argmax(scores))], "marked", gap
 
 
 def _read_question(gray: np.ndarray, number: int, xs: tuple[float, ...], y: float) -> dict[str, Any]:

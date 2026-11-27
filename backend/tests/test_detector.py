@@ -1,7 +1,7 @@
 from pathlib import Path
 import pytest
 
-from app.services.omr_detector import process_omr_image
+from app.services.omr_detector import _classify_answer, process_omr_image
 
 REFERENCE = (
     Path(__file__).resolve().parents[1]
@@ -51,3 +51,10 @@ def test_corrupted_image_data_raises_value_error():
 def test_random_bytes_payload_raises_value_error():
     with pytest.raises(ValueError, match="not a valid image"):
         process_omr_image(b"\x00\x01\x02\x03\x04\x05")
+
+
+def test_classify_answer_handles_blank_single_and_multiple_marks():
+    assert _classify_answer([90.0, 95.0, 88.0, 92.0])[:2] == (None, "blank")
+    assert _classify_answer([185.0, 92.0, 90.0, 91.0])[:2] == ("ক", "marked")
+    assert _classify_answer([185.0, 182.0, 90.0, 91.0])[:2] == (None, "ambiguous")
+    assert _classify_answer([195.0, 145.0, 90.0, 91.0])[:2] == (None, "ambiguous")

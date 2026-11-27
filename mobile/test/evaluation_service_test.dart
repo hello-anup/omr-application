@@ -52,4 +52,45 @@ void main() {
     expect(result.score, 3);
     expect(result.percentage, 75.0);
   });
+
+  test('EvaluationService enforces single-key vs free-mark rules for multi-marked student sheets', () {
+    const service = EvaluationService.instance;
+    final answers = [
+      const DetectedAnswer(
+        questionNumber: 1,
+        selectedOption: null,
+        status: 'ambiguous',
+        confidenceGap: 5.0,
+        scores: {},
+      ),
+      const DetectedAnswer(
+        questionNumber: 2,
+        selectedOption: null,
+        status: 'ambiguous',
+        confidenceGap: 5.0,
+        scores: {},
+      ),
+      const DetectedAnswer(
+        questionNumber: 3,
+        selectedOption: null,
+        status: 'blank',
+        confidenceGap: 2.0,
+        scores: {},
+      ),
+    ];
+
+    final answerKey = {
+      1: 'A', // single right answer -> multi-marked student gets 0 (wrong)
+      2: null, // blank/multi-marked key -> multi-marked student gets free mark
+      3: 'B', // single right answer -> blank student gets 0 (blank)
+    };
+
+    final result = service.evaluate(answers: answers, answerKey: answerKey);
+
+    expect(result.totalQuestions, 3);
+    expect(result.correctCount, 1);
+    expect(result.wrongCount, 1);
+    expect(result.blankCount, 1);
+    expect(result.score, 1);
+  });
 }

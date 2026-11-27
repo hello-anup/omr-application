@@ -46,8 +46,11 @@ class EvaluationService {
       final selected = cleanOption(answer.selectedOption);
 
       if (key == null) {
-        // Free mark rule: If answer key is Blank/null, EVERY student gets mark
+        // Free mark rule: If answer key is Blank/null (or multiple marked), EVERY student gets mark
         correctCount++;
+      } else if (answer.needsReview) {
+        // Student marked multiple bubbles when solution has 1 right answer -> 0 mark (wrong)
+        wrongCount++;
       } else if (selected == null) {
         blankCount++;
       } else if (selected == key) {
