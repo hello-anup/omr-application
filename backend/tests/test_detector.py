@@ -58,3 +58,34 @@ def test_classify_answer_handles_blank_single_and_multiple_marks():
     assert _classify_answer([185.0, 92.0, 90.0, 91.0])[:2] == ("ক", "marked")
     assert _classify_answer([185.0, 182.0, 90.0, 91.0])[:2] == (None, "ambiguous")
     assert _classify_answer([195.0, 145.0, 90.0, 91.0])[:2] == (None, "ambiguous")
+
+
+def test_health_endpoint_supports_get_and_head():
+    import asyncio
+    from app.main import app
+
+    async def call(method: str) -> int:
+        messages = []
+
+        async def receive():
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        async def send(message):
+            messages.append(message)
+
+        scope = {
+            "type": "http",
+            "asgi": {"version": "3.0"},
+            "http_version": "1.1",
+            "method": method,
+            "scheme": "http",
+            "path": "/health",
+            "raw_path": b"/health",
+            "query_string": b"",
+            "headers": [],
+        }
+        await app(scope, receive, send)
+        return messages[0]["status"]
+
+    assert asyncio.run(call("GET")) == 200
+    assert asyncio.run(call("HEAD")) == 200
