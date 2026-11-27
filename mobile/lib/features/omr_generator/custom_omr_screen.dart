@@ -285,7 +285,7 @@ class _CustomOmrScreenState extends State<CustomOmrScreen> {
                     controller: _nameController,
                     decoration: const InputDecoration(
                       labelText: 'Institution Name *',
-                      hintText: 'e.g. Dhaka Residential Model College',
+                      hintText: 'e.g. Dhaka College',
                       prefixIcon: Icon(Icons.account_balance_outlined),
                       border: OutlineInputBorder(),
                     ),
